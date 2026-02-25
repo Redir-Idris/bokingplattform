@@ -1,0 +1,13 @@
+// User Model
+const moongose = require("mongoose");
+
+const userSchema = new moongose.Schema(
+  {
+    username: { type: String, required: true, unique: true, trim: true },
+    password: { type: String, required: true },
+    role: { type: String, enum: ["User", "Admin"], default: "User" },
+  },
+  { timestamps: true }
+);
+
+module.exports = moongose.model("User", userSchema);

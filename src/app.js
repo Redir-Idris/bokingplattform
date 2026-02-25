@@ -5,6 +5,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 
+const authRoutes = require("./routes/auth.routes");
 const { notFound, errorHandler } = require("./middleware/errorHandler");
 const healtRouts = require("./routes/health.routes");
 
@@ -28,6 +29,7 @@ function createApp() {
 
   // Routs
   app.use("/health", healtRouts);
+  app.use("/", authRoutes);
 
   // 404 + error handler
   app.use(notFound);
