@@ -1,27 +1,25 @@
 // Redis; cache  
-const { creteClient } = require("redis");
-const { logger } = require("../utils/logger");
+const { createClient } = require("redis");
 
-let client;
+const redisClient = createClient({
+  url: process.env.REDIS_URL || "redis://127.0.0.1:6379",
+});
 
-async function getRedisClient() {
-  if (client) return client;
+redisClient.on("error", (err) => {
+  console.error("Redis Client Error:", err);
+});
 
-  const url = process.env.REDIS_URL;
-  if (!url) throw new Error("REDIS_URL is missing in .env");
-
-  client = creteClient({ url });
-
-  client.on("error", (err) => logger.error(`Redis error: ${err.message}`));
-
-  await client.connect();
-  logger.info("Redis connected");
-
-  return client;
+async function connectRedis() {
+  if (!redisClient.isOpen) {
+    await redisClient.connect();
+  }
 }
 
-module.exports = { getRedisClient };
+async function getRedisClient() {
+  if (!redisClient.isOpen) {
+    await redisClient.connect();
+  }
+  return redisClient;
+}
 
-// connecting to redis
-// logging error
-// return a client to  
+module.exports = { redisClient, connectRedis, getRedisClient };

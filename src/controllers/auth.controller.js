@@ -13,7 +13,7 @@ async function register(req, res, next) {
     }
 
     if (password.length < 6) {
-      throw new AppError("password must be at least 6 charaters", 400);
+      throw new AppError("password must be at least 6 characters", 400);
     }
 
     const existing = await User.findOne({ username });

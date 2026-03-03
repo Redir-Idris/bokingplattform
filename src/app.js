@@ -8,6 +8,7 @@ const morgan = require("morgan");
 const authRoutes = require("./routes/auth.routes");
 const { notFound, errorHandler } = require("./middleware/errorHandler");
 const healtRouts = require("./routes/health.routes");
+const roomsRoutes = require("./routes/rooms.routes");
 
 function createApp() {
   const app = express();
@@ -30,6 +31,7 @@ function createApp() {
   // Routs
   app.use("/health", healtRouts);
   app.use("/", authRoutes);
+  app.use("/", roomsRoutes);
 
   // 404 + error handler
   app.use(notFound);
