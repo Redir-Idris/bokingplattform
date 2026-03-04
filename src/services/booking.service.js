@@ -3,7 +3,6 @@
 const Booking = require("../models/Booking");
 const { AppError } = require("../utils/AppError");
 
-
 // Validerar tider:
 function validateTimes(startTime, endTime) {
   const start = new Date(startTime);
@@ -20,7 +19,6 @@ function validateTimes(startTime, endTime) {
 
   return { start, end };
 }
-
 
 // Crash
 // There is a conflict if an existing booking overlaps the interval

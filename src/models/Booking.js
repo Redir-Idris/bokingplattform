@@ -14,7 +14,7 @@ const bookingSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    startTime: { type: Data, required: true },
+    startTime: { type: Date, required: true },
     endTime: { type: Date, required: true },
   },
   { timestamps: true }

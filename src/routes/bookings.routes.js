@@ -1,14 +1,15 @@
 const router = require("express").Router();
 
-const { createBooking,
+const {
+  createBooking,
   getBookings,
   updateBooking,
-  deleteBooking
+  deleteBooking,
 } = require("../controllers/bookings.controller");
 
 const { requireAuth } = require("../middleware/auth");
 
-// all booking routs demand login
+// All booking routes require login
 router.post("/bookings", requireAuth, createBooking);
 router.get("/bookings", requireAuth, getBookings);
 router.put("/bookings/:id", requireAuth, updateBooking);

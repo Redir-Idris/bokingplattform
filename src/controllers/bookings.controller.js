@@ -1,4 +1,4 @@
-// Booking: Crud + socket notis 
+// Booking: Crud + socket notis
 const Booking = require("../models/Booking");
 const Room = require("../models/Room");
 const { AppError } = require("../utils/AppError");
@@ -11,6 +11,7 @@ function emitBookingEvent(req, event, payload) {
   const io = req.app.get("io");
   if (!io) return;
 
+  // Simple: broadcast to all connected clients
   io.emit(event, payload);
 }
 
@@ -22,23 +23,23 @@ async function createBooking(req, res, next) {
       throw new AppError("roomId, startTime and endTime are required", 400);
     }
 
-    // Finns rum?
+    // is there room?
     const room = await Room.findById(roomId);
     if (!room) throw new AppError("Room not found", 404);
 
     const { start, end } = validateTimes(startTime, endTime);
 
-    // crash controll
+    // Collision controll
     await assertRoomIsAvailable(roomId, start, end);
 
     const booking = await Booking.create({
       roomId,
-      userId: req.userId._id,
+      userId: req.user._id,
       startTime: start,
       endTime: end,
     });
 
-    // Notis (realTime)
+    // Notification (realtime)
     emitBookingEvent(req, "booking:created", {
       id: booking._id,
       roomId,
@@ -52,7 +53,7 @@ async function createBooking(req, res, next) {
       booking,
     });
   } catch (err) {
-    next(err)
+    next(err);
   }
 }
 
@@ -75,7 +76,7 @@ async function getBookings(req, res, next) {
 
 async function updateBooking(req, res, next) {
   try {
-    const { id } = req.parms;
+    const { id } = req.params;
     const { roomId, startTime, endTime } = req.body;
 
     const booking = await Booking.findById(id);
@@ -85,18 +86,18 @@ async function updateBooking(req, res, next) {
     const isAdmin = req.user.role === "Admin";
     if (!isOwner && !isAdmin) throw new AppError("Forbidden", 403);
 
-    // new value
+    // Determine new values ​​(if fields are not sent → keep old ones)
     const nextRoomId = roomId ?? booking.roomId.toString();
     const nextStartTime = startTime ?? booking.startTime;
     const nextEndTime = endTime ?? booking.endTime;
 
-    // controll that all rum exists if roomId changes
+    // Check that room exists if roomId changes
     const room = await Room.findById(nextRoomId);
     if (!room) throw new AppError("Room not found", 404);
 
     const { start, end } = validateTimes(nextStartTime, nextEndTime);
 
-    // crash controll (ignore the booking itself)
+    // Collision check (ignore the booking itself)
     await assertRoomIsAvailable(nextRoomId, start, end, booking._id);
 
     booking.roomId = nextRoomId;
@@ -121,7 +122,7 @@ async function updateBooking(req, res, next) {
 
 async function deleteBooking(req, res, next) {
   try {
-    const { id } = req.parms;
+    const { id } = req.params;
 
     const booking = await Booking.findById(id);
     if (!booking) throw new AppError("Booking not found", 404);
@@ -137,6 +138,7 @@ async function deleteBooking(req, res, next) {
       roomId: booking.roomId,
       userId: booking.userId,
     });
+
     res.json({ message: "Booking deleted" });
   } catch (err) {
     next(err);
