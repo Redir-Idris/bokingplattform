@@ -1,21 +1,24 @@
 // Starting server + Mongo + socket
+require("dotenv").config();
 
 const http = require("http");
 const { Server } = require("socket.io");
-const { connectRedis } = require("./config/redis");
 
 const { createApp } = require("./app");
 const { connectDB } = require("./config/db");
+const { connectRedis } = require("./config/redis");
 const { logger } = require("./utils/logger");
 
 async function start() {
   await connectDB();
+  logger.info("MongoDB connected");
+
   await connectRedis();
+  logger.info("Redis connected");
 
   const app = createApp();
   const server = http.createServer(app);
 
-  // Socket.IO server connected to the same HTTP-server
   const io = new Server(server, {
     cors: {
       origin: process.env.CLIENT_ORIGIN,
@@ -42,6 +45,6 @@ async function start() {
 }
 
 start().catch((err) => {
-  console.error(err);
+  logger.error("Server failed to start", err);
   process.exit(1);
 });

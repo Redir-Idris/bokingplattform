@@ -4,9 +4,9 @@ const { AppError } = require("../utils/AppError");
 const { getRedisClient } = require("../config/redis");
 
 const ROOMS_CACHE_KEY = "rooms:all";
-const ROOMS_CACHE_TTL_SECONDS = 60; // 1 minut 
+const ROOMS_CACHE_TTL_SECONDS = 60; // 1 minut
 
-// Get Rooms
+// GET /rooms (cache -> db)
 async function getRooms(req, res, next) {
   try {
     const redis = await getRedisClient();
@@ -14,10 +14,7 @@ async function getRooms(req, res, next) {
     // 1) try get from cache
     const cached = await redis.get(ROOMS_CACHE_KEY);
     if (cached) {
-      return res.json({
-        source: "cache",
-        rooms: JSON.parse(cached),
-      });
+      return res.json({ source: "cache", rooms: JSON.parse(cached) });
     }
 
     // 2) if no cache, get from DB
@@ -34,7 +31,8 @@ async function getRooms(req, res, next) {
   }
 }
 
-// Create Rooms
+// POST /rooms (Admin only)
+// Create room
 async function createRoom(req, res, next) {
   try {
     const { name, capacity, type } = req.body;
@@ -57,34 +55,33 @@ async function createRoom(req, res, next) {
       type,
     });
 
-    // Invalidate cache
+    // cache invalidation
     const redis = await getRedisClient();
     await redis.del(ROOMS_CACHE_KEY);
 
-    res.status(201).json({
-      message: "Room created",
-      room,
-    });
+    res.status(201).json({ message: "Room created", room });
   } catch (err) {
     next(err);
   }
 }
 
-// Update Rooms
+// PUT /rooms/:id (Admin only)
+// Update Room
 async function updateRoom(req, res, next) {
   try {
     const { id } = req.params;
     const { name, capacity, type } = req.body;
 
     const updates = {};
-
     if (name !== undefined) updates.name = name;
+
     if (capacity !== undefined) {
       if (!Number.isFinite(Number(capacity)) || Number(capacity) < 1) {
         throw new AppError("capacity must be a number >= 1", 400);
       }
       updates.capacity = Number(capacity);
     }
+
     if (type !== undefined) {
       if (!["workspace", "conference"].includes(type)) {
         throw new AppError("type must be 'workspace' or 'conference'", 400);
@@ -103,20 +100,18 @@ async function updateRoom(req, res, next) {
 
     if (!room) throw new AppError("Room not found", 404);
 
-    // Invalidate cache
+    // cache invalidation
     const redis = await getRedisClient();
     await redis.del(ROOMS_CACHE_KEY);
 
-    res.json({
-      message: "Room updated",
-      room,
-    });
+    res.json({ message: "Room updated", room });
   } catch (err) {
     next(err);
   }
 }
 
-// Delete Rooms
+// DELETE /rooms/:id (Admin only)
+// Delete room
 async function deleteRoom(req, res, next) {
   try {
     const { id } = req.params;
@@ -124,7 +119,7 @@ async function deleteRoom(req, res, next) {
     const room = await Room.findByIdAndDelete(id);
     if (!room) throw new AppError("Room not found", 404);
 
-    // Invalidate cache
+    // cache invalidation
     const redis = await getRedisClient();
     await redis.del(ROOMS_CACHE_KEY);
 

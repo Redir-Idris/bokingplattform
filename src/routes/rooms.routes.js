@@ -1,6 +1,7 @@
 // Room Routs 
 
-const router = require("express").Router();
+const express = require("express");
+const router = express.Router();
 
 const {
   getRooms,
@@ -9,14 +10,14 @@ const {
   deleteRoom,
 } = require("../controllers/rooms.controller");
 
-const { requireAuth, requireRole } = require("../middleware/auth");
+const { requireAuth, authorizeRoles } = require("../middleware/auth");
 
 // Public, everybody can se rum
-router.get("/rooms", getRooms);
+router.get("/rooms", requireAuth, getRooms);
 
 // Admin: hantera rum
-router.post("/rooms", requireAuth, requireRole("Admin"), createRoom);
-router.put("/rooms/:id", requireAuth, requireRole("Admin"), updateRoom);
-router.delete("/rooms/:id", requireAuth, requireRole("Admin"), deleteRoom);
+router.post("/rooms", requireAuth, authorizeRoles("Admin"), createRoom);
+router.put("/rooms/:id", requireAuth, authorizeRoles("Admin"), updateRoom);
+router.delete("/rooms/:id", requireAuth, authorizeRoles("Admin"), deleteRoom);
 
 module.exports = router;

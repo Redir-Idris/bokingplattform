@@ -3,7 +3,7 @@
 const Booking = require("../models/Booking");
 const { AppError } = require("../utils/AppError");
 
-// Validerar tider:
+// Validate time:
 function validateTimes(startTime, endTime) {
   const start = new Date(startTime);
   const end = new Date(endTime);
@@ -20,8 +20,8 @@ function validateTimes(startTime, endTime) {
   return { start, end };
 }
 
-// Crash
-// There is a conflict if an existing booking overlaps the interval
+// Collision check
+// if an existing booking overlaps the interval
 async function assertRoomIsAvailable(roomId, start, end, ignoreBookingId = null) {
   const query = {
     roomId,
@@ -32,6 +32,7 @@ async function assertRoomIsAvailable(roomId, start, end, ignoreBookingId = null)
   if (ignoreBookingId) {
     query._id = { $ne: ignoreBookingId };
   }
+
   // Overlap : existing.start < newEnd AND existing.end > newStart
   const conflict = await Booking.findOne(query);
   if (conflict) {

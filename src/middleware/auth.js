@@ -5,44 +5,44 @@ const { AppError } = require("../utils/AppError");
 
 async function requireAuth(req, res, next) {
   try {
-    const authHeader = req.headers.authorization;
+    const header = req.headers.authorization || "";
+    const [type, token] = header.split(" ");
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (type !== "Bearer" || !token) {
       throw new AppError("Missing or invalid Authorization header", 401);
     }
 
-    const token = authHeader.split(" ")[1];
     const secret = process.env.JWT_SECRET;
-    if (!secret) throw new Error("JWT_SECRET is missing in .ev");
+    if (!secret) throw new Error("JWT_SECRET is missing in .env");
 
-    const decoded = jwt.verify(token, secret);
-    // decoded = { userID, role, iat, exp }
+    const payload = jwt.verify(token, secret);
 
-    const user = await User.findById(decoded.userId).select("-password");
-    if (!user) throw new AppError("User not found", 401);
+    const user = await User.findById(payload.id).select("_id username role");
+    if (!user) throw new AppError("Invalid or expired token", 401);
 
     // user 
-    req.user = user;
-
+    req.user = user; // => { _id, username, role }
     next();
-    // jwt.verify can throw various errors → we map to 401
   } catch (err) {
+    // jwt.verify kan kasta (expired, invalid)
     if (
       err.name === "JsonWebTokenError" ||
-      err.name === "TokenExpiredError"
-    ) {
+      err.name === "TokenExpiredError") {
       return next(new AppError("Invalid or expired token", 401));
     }
     next(err);
   }
 }
 
-function requireRole(role) {
+function authorizeRoles(...allowed) {
   return (req, res, next) => {
-    if (!req.user) return next(new AppError("Not authenticated", 401));
-    if (req.user.role !== role) return next(new AppError("Forbidden", 403));
+    if (!req.user) return next(new AppError("Unauthorized", 401));
+    if (!allowed.includes(req.user.role)) {
+      return next(new AppError("Forbidden", 403));
+    }
     next();
   };
 }
 
-module.exports = { requireAuth, requireRole };
+module.exports = { requireAuth, authorizeRoles };
+

@@ -2,19 +2,16 @@
 const Booking = require("../models/Booking");
 const Room = require("../models/Room");
 const { AppError } = require("../utils/AppError");
-const {
-  validateTimes,
-  assertRoomIsAvailable,
-} = require("../services/booking.service");
+const { validateTimes, assertRoomIsAvailable } = require("../services/booking.service");
 
 function emitBookingEvent(req, event, payload) {
   const io = req.app.get("io");
   if (!io) return;
-
   // Simple: broadcast to all connected clients
   io.emit(event, payload);
 }
 
+// POST /bookings
 async function createBooking(req, res, next) {
   try {
     const { roomId, startTime, endTime } = req.body;
@@ -22,6 +19,9 @@ async function createBooking(req, res, next) {
     if (!roomId || !startTime || !endTime) {
       throw new AppError("roomId, startTime and endTime are required", 400);
     }
+
+    const userId = req.user?._id; // requireAuth puts req.user
+    if (!userId) throw new AppError("Unauthorized", 401);
 
     // is there room?
     const room = await Room.findById(roomId);
@@ -34,7 +34,7 @@ async function createBooking(req, res, next) {
 
     const booking = await Booking.create({
       roomId,
-      userId: req.user._id,
+      userId,
       startTime: start,
       endTime: end,
     });
@@ -42,25 +42,22 @@ async function createBooking(req, res, next) {
     // Notification (realtime)
     emitBookingEvent(req, "booking:created", {
       id: booking._id,
-      roomId,
-      userId: req.user._id,
+      roomId: booking.roomId,
+      userId: booking.userId,
       startTime: booking.startTime,
       endTime: booking.endTime,
     });
 
-    res.status(201).json({
-      message: "Booking created",
-      booking,
-    });
+    res.status(201).json({ message: "Booking created", booking });
   } catch (err) {
     next(err);
   }
 }
 
+// GET /bookings  (User: sina egna, Admin: alla)
 async function getBookings(req, res, next) {
   try {
     const isAdmin = req.user.role === "Admin";
-
     const filter = isAdmin ? {} : { userId: req.user._id };
 
     const bookings = await Booking.find(filter)
@@ -74,6 +71,7 @@ async function getBookings(req, res, next) {
   }
 }
 
+// PUT /bookings/:id (endast skaparen eller Admin)
 async function updateBooking(req, res, next) {
   try {
     const { id } = req.params;
@@ -120,6 +118,7 @@ async function updateBooking(req, res, next) {
   }
 }
 
+// DELETE /bookings/:id (endast skaparen eller Admin)
 async function deleteBooking(req, res, next) {
   try {
     const { id } = req.params;
