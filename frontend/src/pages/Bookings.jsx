@@ -1,6 +1,7 @@
 // Booking page
 import { useEffect, useState } from "react";
 import api from "../api/api";
+import socket from "../api/socket";
 
 function Bookings() {
   const [bookings, setBookings] = useState([]);
@@ -13,6 +14,7 @@ function Bookings() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [liveMessage, setLiveMessage] = useState("");
 
   async function fetchBookings() {
     try {
@@ -45,6 +47,33 @@ function Bookings() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    function handleBookingCreated(payload) {
+      setLiveMessage(`New booking created for room ${payload.roomId}`);
+      fetchBookings();
+    }
+
+    function handleBookingUpdated(payload) {
+      setLiveMessage(`Booking updated for room ${payload.roomId}`);
+      fetchBookings();
+    }
+
+    function handleBookingDeleted(payload) {
+      setLiveMessage(`Booking deleted for room ${payload.roomId}`);
+      fetchBookings();
+    }
+
+    socket.on("booking:created", handleBookingCreated);
+    socket.on("booking:updated", handleBookingUpdated);
+    socket.on("booking:deleted", handleBookingDeleted);
+
+    return () => {
+      socket.off("booking:created", handleBookingCreated);
+      socket.off("booking:created", handleBookingCreated);
+      socket.off("booking:created", handleBookingCreated);
+    };
+  }, []);
+
   async function handleCreateBooking(e) {
     e.preventDefault();
 
@@ -56,14 +85,14 @@ function Bookings() {
         startTime: form.startTime,
         endTime: form.endTime,
       });
+
       setForm({
         roomId: "",
         startTime: "",
         endTime: "",
       });
 
-      await fetchBookings(),
-        alert("Booking created");
+      alert("Booking created");
     } catch (err) {
       alert(err.response?.data?.message || "Could not create booking");
     }
@@ -72,7 +101,6 @@ function Bookings() {
   async function handleDeleteBooking(id) {
     try {
       await api.delete(`/bookings/${id}`);
-      await fetchBookings();
       alert("Booking deleted");
     } catch (err) {
       alert(err.response?.data?.message || "Could not delete booking");
@@ -90,6 +118,17 @@ function Bookings() {
   return (
     <div>
       <h2>Bookings</h2>
+      {liveMessage && (
+        <p style={{
+          background: "#eef",
+          padding: "10px",
+          borderRadius: "8px",
+          marginBottom: "16px",
+        }}
+        >
+          {liveMessage}
+        </p>
+      )}
 
       <form
         onSubmit={handleCreateBooking}
