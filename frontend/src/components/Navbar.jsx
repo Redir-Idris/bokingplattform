@@ -1,5 +1,9 @@
 // Navbar 
-import { Link, useNavigate } from "react-router-dom";
+import { AppBar, Toolbar, Typography, Button, Box } from "@mui/material";
+import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
+import BookOnlineIcon from "@mui/icons-material/BookOnline";
+import LogoutIcon from "@mui/icons-material/Logout";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -10,21 +14,44 @@ function Navbar() {
   }
 
   return (
-    <nav
-      style={{
-        display: "flex",
-        gap: "16px",
-        padding: "16px",
-        borderBottom: "1px solid #ccc",
-        marginBottom: "24px",
-      }}
-    >
-      <Link to="/rooms">Romms</Link>
-      <Link to="/bookings">Bookings</Link>
+    <AppBar position="static" elevation={1}>
+      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          Bookingplatform
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/rooms"
+            startIcon={<MeetingRoomIcon />}
+          >
+            Rooms
+          </Button>
 
-      <button onClick={handleLogout}>Logout</button>
-    </nav>
+
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/bookings"
+            startIcon={<BookOnlineIcon />}
+          >
+            Bookings
+          </Button>
+
+
+          <Button
+            color="inherit"
+            onClick={handleLogout}
+            startIcon={<LogoutIcon />}
+          >
+            Logout
+          </Button>
+        </Box>
+      </Toolbar>
+    </AppBar>
   );
 }
 
 export default Navbar;
+
