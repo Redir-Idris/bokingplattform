@@ -2,6 +2,20 @@
 import { useEffect, useState } from "react";
 import api from "../api/api";
 import socket from "../api/socket";
+import {
+  Box, Card, CardContent,
+  Typography, TextField, Button,
+  Alert, Stack, CircularProgress,
+  MenuItem, Grid, Chip,
+  IconButton, Divider,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive"
+
+
 
 function Bookings() {
   const [bookings, setBookings] = useState([]);
@@ -13,6 +27,7 @@ function Bookings() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [liveMessage, setLiveMessage] = useState("");
 
@@ -24,6 +39,7 @@ function Bookings() {
       setError(err.response?.data?.message || "Could not load bookings");
     }
   }
+
   async function fetchRooms() {
     try {
       const res = await api.get("/rooms");
@@ -79,6 +95,7 @@ function Bookings() {
 
     try {
       setError("");
+      setSubmitting(true);
 
       await api.post("/bookings", {
         roomId: form.roomId,
@@ -92,124 +109,224 @@ function Bookings() {
         endTime: "",
       });
 
-      alert("Booking created");
     } catch (err) {
-      alert(err.response?.data?.message || "Could not create booking");
+      setError(err.response?.data?.message || "Could not create booking");
+    } finally {
+      setSubmitting(false);
     }
   }
 
   async function handleDeleteBooking(id) {
     try {
+      setError("");
       await api.delete(`/bookings/${id}`);
-      alert("Booking deleted");
     } catch (err) {
-      alert(err.response?.data?.message || "Could not delete booking");
+      setError(err.response?.data?.message || "Could not delete booking");
     }
   }
 
   if (loading) {
-    return <p>Loading bookings...</p>
-  }
-
-  if (error) {
-    return <p>{error}</p>
+    return (
+      <Box
+        sx={{
+          minHeight: "50vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Stack spacing={2} alignItems="center">
+          <CircularProgress />
+          <Typography>Loading bookings...</Typography>
+        </Stack>
+      </Box>
+    );
   }
 
   return (
-    <div>
-      <h2>Bookings</h2>
-      {liveMessage && (
-        <p style={{
-          background: "#eef",
-          padding: "10px",
-          borderRadius: "8px",
-          marginBottom: "16px",
-        }}
-        >
-          {liveMessage}
-        </p>
-      )}
+    <Box>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          Bookings
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Create and manage reservations for rooms in the system.
+        </Typography>
+      </Box>
 
-      <form
-        onSubmit={handleCreateBooking}
-        style={{
-          border: "1px solid #ccc",
-          padding: "16px",
-          borderRadius: "8px",
-          marginBottom: "24px",
-        }}
-      >
-        <h3>Create Booking</h3>
+      <Grid container spacing={3}>
+        <Grid item xs={12} lg={5}>
+          <Card sx={{ borderRadius: 4, boxShadow: 3 }}>
+            <CardContent>
+              <Stack spacing={3}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <EventAvailableIcon color="primary" />
+                  <Typography variant="h6">Create booking</Typography>
+                </Box>
 
-        <select value={form.roomId}
-          onChange={(e) => setForm({ ...form, roomId: e.target.value })}
-        >
-          <option value="">Select room</option>
-          {rooms.map((room) => (
-            <option key={room._id} value={room._id}>
-              {room.name} ({room.type})
-            </option>
-          ))}
-        </select>
+                {error && <Alert severity="error">{error}</Alert>}
 
-        <br />
-        <br />
+                {liveMessage && (
+                  <Alert
+                    severity="info"
+                    icon={<NotificationsActiveIcon fontSize="inherit" />}
+                  >
+                    {liveMessage}
+                  </Alert>
+                )}
 
-        <input
-          type="datetime-local"
-          value={form.startTime}
-          onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-        />
+                <Box
+                  component="form"
+                  onSubmit={handleCreateBooking}
+                  sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                >
+                  <TextField
+                    select
+                    label="Room"
+                    value={form.roomId}
+                    onChange={(e) =>
+                      setForm({ ...form, roomId: e.target.value })
+                    }
+                    fullWidth
+                    required
+                  >
+                    <MenuItem value="">Select room</MenuItem>
+                    {rooms.map((room) => (
+                      <MenuItem key={room._id} value={room._id}>
+                        {room.name} ({room.type})
+                      </MenuItem>
+                    ))}
+                  </TextField>
 
-        <br />
-        <br />
+                  <TextField
+                    label="Start-time"
+                    type="datetime-local"
+                    value={form.startTime}
+                    onChange={(e) =>
+                      setForm({ ...form, startTime: e.target.value })
+                    }
+                    inputLabelProps={{ shrink: true }}
+                    fullWidth
+                    required
+                  />
 
-        <input
-          type="datetime-local"
-          value={form.endTime}
-          onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-        />
+                  <TextField
+                    label="End-time"
+                    type="datetime-local"
+                    value={form.endTime}
+                    onChange={(e) =>
+                      setForm({ ...form, endTime: e.target.value })
+                    }
+                    inputLabelProps={{ shrink: true }}
+                    fullWidth
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    disabled={submitting}
+                    startIcon={<EventAvailableIcon />}
+                    sx={{ py: 1.3 }}
+                  >
+                    {submitting ? "Creating..." : "Create booking"}
+                  </Button>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <br />
-        <br />
+        <Grid item xs={12} lg={7}>
+          <Stack spacing={2}>
+            <Typography variant="h6">My bookings</Typography>
+            {bookings.length === 0 ? (
+              <Card sx={{ borderRadius: 4, boxShadow: 2 }}>
+                <CardContent>
+                  <Typography variant="subtitle1" gutterBottom>
+                    No booking found
+                  </Typography>
+                  <Typography color="text.secondary">
+                    You have no reservations yet.
+                  </Typography>
+                </CardContent>
+              </Card>
+            ) : (
+              bookings.map((booking) => (
+                <Card
+                  key={booking._id}
+                  sx={{
+                    borderRadius: 4,
+                    boxShadow: 3,
+                    transition: "0.2s ease",
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: 6,
+                    },
+                  }}
+                >
+                  <CardContent>
+                    <Stack spacing={2}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="h6">
+                            {booking.roomId?.name || "Unknown room"}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Booking ID: {booking._id}
+                          </Typography>
+                        </Box>
 
-        <button type="submit">Create booking</button>
-      </form>
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDeleteBooking(booking._id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
 
-      <h3>My bookings</h3>
+                      <Divider />
 
-      {bookings.length === 0 ? (
-        <p>No bookings found.</p>
-      ) : (
-        bookings.map((booking) => (
-          <div
-            key={booking._id}
-            style={{
-              border: "1px solid #ccc",
-              padding: "12px",
-              borderRadius: "8px",
-              marginBottom: "12px",
-            }}
-          >
-            <p>
-              <strong>Room:</strong> {booking.roomId?.name || "Unknown room"}
-            </p>
-            <p>
-              <strong>Start:</strong> {" "}
-              {new Date(booking.startTime).toLocaleString()}
-            </p>
-            <p>
-              <strong>End:</strong> {" "}
-              {new Date(booking.endTime).toLocaleString()}
-            </p>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <MeetingRoomIcon fontSize="small" color="primary" />
+                        <Chip
+                          label={booking.roomId?.type || "unknown"}
+                          variant="outlined"
+                          color="primary"
+                          sx={{ TextTransform: "capitalize" }}
+                        />
+                      </Box>
 
-            <button onClick={() => handleDeleteBooking(booking._id)}>
-              Delete
-            </button>
-          </div>
-        ))
-      )}
-    </div>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <AccessTimeIcon fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          <strong>Start</strong>{" "}
+                          {new Date(booking.startTime).toLocaleString()}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <AccessTimeIcon fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          <strong>End</strong>{" "}
+                          {new Date(booking.endTime).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </Stack>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
 
