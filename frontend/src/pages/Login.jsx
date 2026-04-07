@@ -30,6 +30,8 @@ function Login() {
       });
 
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.token));
+
       navigate("/rooms");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
@@ -61,7 +63,7 @@ function Login() {
               <Typography variant="h4" gutterBottom>
                 Log in
               </Typography>
-              <Typography variant="body1" color="text.secondary">
+              <Typography variant="body1" color="textSecondary">
                 Welcome back
               </Typography>
             </Box>
@@ -100,7 +102,7 @@ function Login() {
                 {loading ? "Logging in..." : "log in"}
               </Button>
             </Box>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="textSecondary">
               Don't have an account?{" "}
               <Link component={RouterLink} to="/register" underline="hover">
                 Register here

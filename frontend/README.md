@@ -1,16 +1,114 @@
-# React + Vite
+Bokningsplattform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+En fullstack bokningsplattform där användare kan boka rum i realtid.
 
-Currently, two official plugins are available:
+🚀 Funktioner
+- Registrera och logga in användare (JWT-auth)
+- Roller: User och Admin
+- Visa alla rum (med Redis-cache)
+- Skapa, uppdatera och ta bort bokningar
+- Admin kan skapa, uppdatera och ta bort rum
+- Realtidsuppdateringar med Socket.io
+- Modern frontend med React + MUI
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+🧱 Tech stack
 
-## React Compiler
+Backend
+- Node.js
+- Express
+- MongoDB (Mongoose)
+- Redis (cache)
+- Socket.io
+- JWT (auth)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Frontend
+- React (Vite)
+- Material UI (MUI)
+- Axios
+- React Router
+- Socket.io-client
 
-## Expanding the ESLint configuration
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+⚙️ Installation
+1. Klona projektet
+git clone <repo-url>
+cd bokningsplattform
+
+2. Backend
+npm install
+npm run dev
+
+Se till att:
+- MongoDB kör på: mongodb://127.0.0.1:27017
+- Redis kör på: redis://127.0.0.1:6379
+
+3. Frontend
+cd frontend
+npm install
+npm run dev
+
+Frontend kör på:
+http://localhost:5173
+
+🔐 Auth
+- JWT används för autentisering
+- Token lagras i localStorage
+- Protected routes i frontend
+
+🧠 Arkitektur
+
+Backend är uppdelad i:
+
+- controllers → hanterar requests
+- services → affärslogik (t.ex. booking rules)
+- models → MongoDB schema
+- middleware → auth & error handling
+- config → DB & Redis
+- utils → logger, errors
+
+Frontend är uppdelad i:
+- pages → Login, Rooms, Bookings
+- components → Navbar, ProtectedRoute
+- api → axios & socket
+
+⚡ Redis Cache
+- GET /rooms cachas i Redis
+- TTL: 60 sekunder
+- Cache invalidieras vid:
+* create room
+* update room
+* delete room
+
+🔄 Realtid (Socket.io)
+
+Events:
+
+booking
+booking
+booking
+
+Frontend uppdateras automatiskt utan refresh.
+
+📸 Screenshots
+![Login](photos/login.1.png)
+![Rooms](photos/Rooms.2.png)
+![Boooking](photos/Booking.3.png)
+
+
+
+🧪 Testning
+
+- Testad via Thunder Client / Postman
+- Testad i frontend (React)
+- Testat:
+* auth
+* CRUD rooms
+* CRUD bookings
+* cache
+* realtime events
+
+
+👤 Developer
+[ Redir Idris ]
+
+

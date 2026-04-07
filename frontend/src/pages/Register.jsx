@@ -73,7 +73,7 @@ function Register() {
               <Typography variant="h4" gutterBottom>
                 Create acount
               </Typography>
-              <Typography variant="body1" color="text.secondary">
+              <Typography variant="body1" color="textSecondary">
                 Regeister a new user in bookingplattform
               </Typography>
             </Box>
@@ -123,7 +123,7 @@ function Register() {
               </Button>
             </Box>
 
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="textSecondary">
               Already have an account?{" "}
               <Link component={RouterLink} to="/" underline="hover">
                 Log in here

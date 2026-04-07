@@ -1,13 +1,20 @@
 // Booking page
 import { useEffect, useState } from "react";
-import api from "../api/api";
-import socket from "../api/socket";
 import {
-  Box, Card, CardContent,
-  Typography, TextField, Button,
-  Alert, Stack, CircularProgress,
-  MenuItem, Grid, Chip,
-  IconButton, Divider,
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  Alert,
+  CircularProgress,
+  Stack,
+  MenuItem,
+  Grid,
+  Chip,
+  IconButton,
+  Divider,
+  TextField,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
@@ -15,14 +22,20 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 
-function Bookings() {
+import api from "../api/api";
+import socket from "../api/socket";
+
+function Sucking() {
   const [bookings, setBookings] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [form, setForm] = useState({
     roomId: "",
-    startTime: "",
-    endTime: "",
+    startTime: null,
+    endTime: null,
   });
 
   const [loading, setLoading] = useState(true);
@@ -64,17 +77,17 @@ function Bookings() {
 
   useEffect(() => {
     function handleBookingCreated(payload) {
-      setLiveMessage(`New booking created for room ${payload.roomId}`);
+      setLiveMessage(`Ny bokning skapad för rum ${payload.roomId}`);
       fetchBookings();
     }
 
     function handleBookingUpdated(payload) {
-      setLiveMessage(`Booking updated for room ${payload.roomId}`);
+      setLiveMessage(`Bokning uppdaterad för rum ${payload.roomId}`);
       fetchBookings();
     }
 
     function handleBookingDeleted(payload) {
-      setLiveMessage(`Booking deleted for room ${payload.roomId}`);
+      setLiveMessage(`Bokning borttagen för rum ${payload.roomId}`);
       fetchBookings();
     }
 
@@ -92,22 +105,31 @@ function Bookings() {
   async function handleCreateBooking(e) {
     e.preventDefault();
 
+    if (!form.roomId || !form.startTime || !form.endTime) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    if (form.endTime.isBefore(form.startTime) || form.endTime.isSame(form.startTime)) {
+      setError("End time must be after start time");
+      return;
+    }
+
     try {
       setError("");
       setSubmitting(true);
 
       await api.post("/bookings", {
         roomId: form.roomId,
-        startTime: form.startTime,
-        endTime: form.endTime,
+        startTime: form.startTime.toISOString(),
+        endTime: form.endTime.toISOString(),
       });
 
       setForm({
         roomId: "",
-        startTime: "",
-        endTime: "",
+        startTime: null,
+        endTime: null,
       });
-
     } catch (err) {
       setError(err.response?.data?.message || "Could not create booking");
     } finally {
@@ -148,8 +170,8 @@ function Bookings() {
         <Typography variant="h4" gutterBottom>
           Bookings
         </Typography>
-        <Typography variant="body1" color="textSecondary">
-          Create and manage reservations for rooms in the system.
+        <Typography variant="body1" color="text.secondary">
+          Skapa och hantera bokningar för rum i systemet.
         </Typography>
       </Box>
 
@@ -181,8 +203,6 @@ function Bookings() {
                 >
                   <TextField
                     select
-                    id="room"
-                    name="room"
                     label="Room"
                     value={form.roomId}
                     onChange={(e) =>
@@ -199,30 +219,36 @@ function Bookings() {
                     ))}
                   </TextField>
 
-                  <TextField
-                    id="start-time"
-                    name="startTime"
-                    label="Start time"
-                    type="datetime-local"
-                    value={form.startTime}
-                    onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    fullWidth
-                    required
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DateTimePicker
+                      label="Start time"
+                      value={form.startTime}
+                      onChange={(newValue) =>
+                        setForm({ ...form, startTime: newValue })
+                      }
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          required: true,
+                        },
+                      }}
+                    />
 
-                  <TextField
-                    id="end-time"
-                    name="endTime"
-                    label="End time"
-                    type="datetime-local"
-                    value={form.endTime}
-                    onChange={(e) =>
-                      setForm({ ...form, endTime: e.target.value })}
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    fullWidth
-                    required
-                  />
+                    <DateTimePicker
+                      label="End time"
+                      value={form.endTime}
+                      onChange={(newValue) =>
+                        setForm({ ...form, endTime: newValue })
+                      }
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          required: true,
+                        },
+                      }}
+                    />
+                  </LocalizationProvider>
+
                   <Button
                     type="submit"
                     variant="contained"
@@ -242,14 +268,15 @@ function Bookings() {
         <Grid size={{ xs: 12, lg: 7 }}>
           <Stack spacing={2}>
             <Typography variant="h6">My bookings</Typography>
+
             {bookings.length === 0 ? (
               <Card sx={{ borderRadius: 4, boxShadow: 2 }}>
                 <CardContent>
                   <Typography variant="subtitle1" gutterBottom>
-                    No booking found
+                    No bookings found
                   </Typography>
-                  <Typography color="textSecondary">
-                    You have no reservations yet.
+                  <Typography color="text.secondary">
+                    Du har inga bokningar ännu.
                   </Typography>
                 </CardContent>
               </Card>
@@ -280,7 +307,7 @@ function Bookings() {
                           <Typography variant="h6">
                             {booking.roomId?.name || "Unknown room"}
                           </Typography>
-                          <Typography variant="body2" color="textSecondary">
+                          <Typography variant="body2" color="text.secondary">
                             Booking ID: {booking._id}
                           </Typography>
                         </Box>
@@ -308,7 +335,7 @@ function Bookings() {
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <AccessTimeIcon fontSize="small" color="action" />
                         <Typography variant="body2">
-                          <strong>Start</strong>{" "}
+                          <strong>Start:</strong>{" "}
                           {new Date(booking.startTime).toLocaleString()}
                         </Typography>
                       </Box>
@@ -316,7 +343,7 @@ function Bookings() {
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <AccessTimeIcon fontSize="small" color="action" />
                         <Typography variant="body2">
-                          <strong>End</strong>{" "}
+                          <strong>End:</strong>{" "}
                           {new Date(booking.endTime).toLocaleString()}
                         </Typography>
                       </Box>
@@ -332,4 +359,4 @@ function Bookings() {
   );
 }
 
-export default Bookings;
+export default Sucking;

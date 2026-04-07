@@ -10,6 +10,7 @@ function Navbar() {
 
   function handleLogout() {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/");
   }
 
@@ -19,6 +20,7 @@ function Navbar() {
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
           Bookingplatform
         </Typography>
+
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button
             color="inherit"
